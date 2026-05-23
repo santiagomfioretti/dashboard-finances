@@ -29,11 +29,19 @@ h1{font-size:22px;font-weight:500;margin-bottom:1.5rem;color:#1a1a1a}
 .as{font-size:11px;color:#aaa}
 .ab{font-size:22px;font-weight:500;margin-bottom:2px}
 .aconv{font-size:11px;color:#aaa}
-.ainp{display:flex;gap:5px;margin-top:8px;border-top:1px solid #f0f0f0;padding-top:8px}
-.ainp input{flex:1;font-size:12px;height:30px;padding:0 8px;border:1px solid #e0e0e0;border-radius:6px;outline:none}
-.ainp input:focus{border-color:#888}
-.ainp button{font-size:12px;height:30px;padding:0 12px;border:1px solid #e0e0e0;border-radius:6px;background:#fff;cursor:pointer}
-.ainp button:hover{background:#f5f5f3}
+.acc-footer{margin-top:10px;border-top:1px solid #f0f0f0;padding-top:10px}
+.btn-edit{font-size:12px;height:28px;padding:0 12px;border:1px solid #e0e0e0;border-radius:6px;background:#fff;cursor:pointer;color:#555;width:100%}
+.btn-edit:hover{background:#f5f5f3;border-color:#bbb}
+.edit-mode{display:none;flex-direction:column;gap:6px}
+.edit-mode.open{display:flex}
+.edit-mode input{font-size:13px;height:32px;padding:0 10px;border:1px solid #ccc;border-radius:6px;outline:none;width:100%}
+.edit-mode input:focus{border-color:#555}
+.edit-actions{display:flex;gap:6px}
+.btn-save{flex:1;font-size:12px;height:30px;border:none;border-radius:6px;background:#1a1a1a;color:#fff;cursor:pointer;font-weight:500}
+.btn-save:hover{background:#333}
+.btn-cancel{font-size:12px;height:30px;padding:0 12px;border:1px solid #e0e0e0;border-radius:6px;background:#fff;cursor:pointer;color:#888}
+.btn-cancel:hover{background:#f5f5f3}
+.acc-updated{font-size:11px;color:#aaa;margin-top:4px;text-align:center}
 .uz{border:1px dashed #ccc;border-radius:12px;padding:2rem;text-align:center;cursor:pointer;margin-bottom:1rem;background:#fff}
 .uz:hover{background:#f5f5f3}
 .uz .icon{font-size:32px;display:block;margin-bottom:8px}
@@ -142,7 +150,8 @@ const ACCS=[
   {id:'abn',name:'ABN AMRO',cur:'EUR',emoji:'🏦'},
   {id:'wise',name:'Wise',cur:'EUR',emoji:'🌐'},
   {id:'san-s',name:'Santander Santi',cur:'EUR',emoji:'🏦'},
-  {id:'ef-ar-usd',name:'Efectivo Argentina USD',cur:'USD',emoji:'💵'},{id:'ef-ar-eur',name:'Efectivo Argentina EUR',cur:'EUR',emoji:'💶'},
+  {id:'ef-ar-usd',name:'Efectivo Argentina USD',cur:'USD',emoji:'💵'},
+  {id:'ef-ar-eur',name:'Efectivo Argentina EUR',cur:'EUR',emoji:'💶'},
 ];
 let ST={bal:{},movs:[]};
 try{const s=localStorage.getItem('jdash_v1');if(s)ST=JSON.parse(s);}catch(e){}
@@ -174,22 +183,51 @@ function rAccs(){
   ACCS.forEach(a=>{
     const b=getBal(a.id);const ev=toE(b,a.cur);
     const d=document.createElement('div');d.className='ac';
-    const convStr=a.cur!=='EUR'?`<div class="aconv">Saldo: ${b.toLocaleString('es-ES',{maximumFractionDigits:0})} ${a.cur}</div>`:'';
+    const convStr=a.cur!=='EUR'?`<div class="aconv">Saldo: ${b.toLocaleString('es-ES',{maximumFractionDigits:2})} ${a.cur}</div>`:'';
+    const lastEdit=ST.lastEdit&&ST.lastEdit[a.id]?`<div class="acc-updated">Editado ${ST.lastEdit[a.id]}</div>`:'';
     d.innerHTML=`
       <div class="at">
         <div class="ad" style="background:#f5f5f3;font-size:18px">${a.emoji}</div>
         <div><div class="an">${a.name}</div><div class="as">${a.cur}</div></div>
       </div>
-      <div class="ab" style="color:${ev>=0?'#0F6E56':'#993C1D'}">${fe(ev)}</div>
+      <div class="ab" id="bal-${a.id}" style="color:${ev>=0?'#0F6E56':'#993C1D'}">${fe(ev)}</div>
       ${convStr}
-      <div class="ainp">
-        <input type="number" id="i-${a.id}" placeholder="Saldo inicial" step="0.01" value="${ST.bal[a.id]!=null?ST.bal[a.id]:''}">
-        <button onclick="svBal('${a.id}')">Guardar</button>
+      <div class="acc-footer">
+        <button class="btn-edit" id="btn-${a.id}" onclick="toggleEdit('${a.id}')">✏️ Editar saldo</button>
+        <div class="edit-mode" id="edit-${a.id}">
+          <input type="number" id="i-${a.id}" placeholder="Nuevo saldo inicial" step="0.01" value="${ST.bal[a.id]!=null?ST.bal[a.id]:''}">
+          <div class="edit-actions">
+            <button class="btn-save" onclick="svBal('${a.id}')">Guardar</button>
+            <button class="btn-cancel" onclick="cancelEdit('${a.id}')">Cancelar</button>
+          </div>
+        </div>
+        ${lastEdit}
       </div>`;
     g.appendChild(d);
   });
 }
-function svBal(id){const v=parseFloat(document.getElementById('i-'+id).value);if(isNaN(v))return;ST.bal[id]=v;sv();rAccs();rSummary();}
+function toggleEdit(id){
+  const em=document.getElementById('edit-'+id);
+  const btn=document.getElementById('btn-'+id);
+  em.classList.add('open');
+  btn.style.display='none';
+  document.getElementById('i-'+id).focus();
+}
+function cancelEdit(id){
+  const em=document.getElementById('edit-'+id);
+  const btn=document.getElementById('btn-'+id);
+  em.classList.remove('open');
+  btn.style.display='';
+}
+function svBal(id){
+  const v=parseFloat(document.getElementById('i-'+id).value);
+  if(isNaN(v)){cancelEdit(id);return;}
+  ST.bal[id]=v;
+  if(!ST.lastEdit)ST.lastEdit={};
+  const now=new Date();
+  ST.lastEdit[id]=now.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  sv();cancelEdit(id);rAccs();rSummary();
+}
 function recalc(){rSummary();rAccs();if(!document.getElementById('p-analisis').style.display||document.getElementById('p-analisis').classList.contains('active'))rAnal();}
 function rMov(){
   const fa=document.getElementById('fa').value;
