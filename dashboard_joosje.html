@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Financiero</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;font-size:15px}
+.wrap{max-width:900px;margin:0 auto;padding:2rem 1.5rem}
+h1{font-size:22px;font-weight:500;margin-bottom:1.5rem;color:#1a1a1a}
+.tabs{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid #ddd}
+.tab{font-size:13px;padding:8px 18px;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-left:none;border-right:none;border-top:none}
+.tab.active{color:#1a1a1a;border-bottom:2px solid #1a1a1a;font-weight:500}
+.tab:hover:not(.active){color:#1a1a1a}
+.panel{display:none}.panel.active{display:block}
+.mrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.5rem}
+.met{background:#fff;border-radius:8px;padding:1rem;border:1px solid #e5e5e5}
+.met .ml{font-size:12px;color:#888;margin-bottom:4px}
+.met .mv{font-size:20px;font-weight:500}
+.met .ms{font-size:11px;color:#aaa;margin-top:2px}
+.ag{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:1.5rem}
+.ac{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:1rem 1.1rem}
+.at{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.ad{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.an{font-size:13px;font-weight:500;line-height:1.2}
+.as{font-size:11px;color:#aaa}
+.ab{font-size:22px;font-weight:500;margin-bottom:2px}
+.aconv{font-size:11px;color:#aaa}
+.ainp{display:flex;gap:5px;margin-top:8px;border-top:1px solid #f0f0f0;padding-top:8px}
+.ainp input{flex:1;font-size:12px;height:30px;padding:0 8px;border:1px solid #e0e0e0;border-radius:6px;outline:none}
+.ainp input:focus{border-color:#888}
+.ainp button{font-size:12px;height:30px;padding:0 12px;border:1px solid #e0e0e0;border-radius:6px;background:#fff;cursor:pointer}
+.ainp button:hover{background:#f5f5f3}
+.uz{border:1px dashed #ccc;border-radius:12px;padding:2rem;text-align:center;cursor:pointer;margin-bottom:1rem;background:#fff}
+.uz:hover{background:#f5f5f3}
+.uz .icon{font-size:32px;display:block;margin-bottom:8px}
+.uz p{font-size:13px;color:#555}
+.uz span{font-size:11px;color:#aaa}
+.fb{background:#f5f5f3;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.5rem}
+.fb p{font-size:12px;color:#666;margin-bottom:8px}
+.cp{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:11px;padding:3px 10px;border-radius:20px;background:#E1F5EE;color:#085041;font-weight:500}
+.pill.opt{background:#f0f0f0;color:#888}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.mh select{font-size:12px;height:28px;padding:0 8px;border:1px solid #e0e0e0;border-radius:6px}
+.mt{width:100%;border-collapse:collapse;font-size:13px}
+.mt th{font-size:11px;font-weight:500;color:#888;text-align:left;padding:8px;border-bottom:1px solid #eee}
+.mt td{padding:8px;border-bottom:1px solid #f5f5f5;color:#1a1a1a}
+.mt tr:last-child td{border-bottom:none}
+.mt tr:hover td{background:#fafafa}
+.bdg{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500}
+.bin{background:#E1F5EE;color:#085041}
+.bout{background:#FAECE7;color:#712B13}
+.pos{color:#0F6E56;font-weight:500}
+.neg{color:#993C1D;font-weight:500}
+.empty{text-align:center;padding:3rem;color:#aaa;font-size:13px}
+.fxr{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:1.5rem;align-items:center;background:#fff;padding:.8rem 1rem;border-radius:8px;border:1px solid #e5e5e5}
+.fxi{display:flex;align-items:center;gap:8px;font-size:13px;color:#555}
+.fxi label{font-size:12px}
+.fxi input{width:90px;font-size:13px;height:28px;padding:0 8px;border:1px solid #e0e0e0;border-radius:6px}
+.cw{position:relative;width:100%;margin-bottom:1.5rem}
+.stitle{font-size:12px;font-weight:500;color:#888;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+.legrow{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px;font-size:12px;color:#666}
+.legit{display:flex;align-items:center;gap:5px}
+.legsq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.success{color:#0F6E56;font-size:13px}
+.error{color:#993C1D;font-size:13px}
+.info{color:#555;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>💰 Dashboard financiero</h1>
+<div class="tabs">
+  <button class="tab active" onclick="sw('saldos',this)">Saldos</button>
+  <button class="tab" onclick="sw('movimientos',this)">Movimientos</button>
+  <button class="tab" onclick="sw('analisis',this)">Análisis</button>
+  <button class="tab" onclick="sw('cargar',this)">Cargar Excel</button>
+</div>
+
+<!-- SALDOS -->
+<div id="p-saldos" class="panel active">
+  <div class="fxr">
+    <div class="fxi"><label>ARS / EUR</label><input type="number" id="fx-ars" value="1300" step="10" oninput="recalc()"></div>
+    <div class="fxi"><label>USD / EUR</label><input type="number" id="fx-usd" value="0.92" step="0.01" oninput="recalc()"></div>
+    <span style="font-size:11px;color:#aaa">Tipos de cambio para conversión</span>
+  </div>
+  <div class="mrow" id="smets"></div>
+  <div class="stitle">cuentas</div>
+  <div class="ag" id="agrid"></div>
+</div>
+
+<!-- MOVIMIENTOS -->
+<div id="p-movimientos" class="panel">
+  <div class="mh">
+    <div class="stitle" style="margin:0">historial de movimientos</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <select id="fa" onchange="rMov()"><option value="">Todas las cuentas</option></select>
+      <select id="fc" onchange="rMov()"><option value="">Todas las categorías</option></select>
+    </div>
+  </div>
+  <div id="movbox"></div>
+</div>
+
+<!-- ANÁLISIS -->
+<div id="p-analisis" class="panel"><div id="abox"></div></div>
+
+<!-- CARGAR EXCEL -->
+<div id="p-cargar" class="panel">
+  <div class="fb">
+    <p>ℹ️ Formato esperado — una fila por movimiento:</p>
+    <div class="cp">
+      <span class="pill">fecha</span>
+      <span class="pill">cuenta</span>
+      <span class="pill">categoría</span>
+      <span class="pill">descripción</span>
+      <span class="pill">monto</span>
+      <span class="pill opt">moneda (opcional)</span>
+    </div>
+    <p style="margin-top:8px;font-size:11px;color:#aaa">Monto positivo = ingreso &nbsp;·&nbsp; negativo = egreso &nbsp;·&nbsp; Los nombres de cuenta deben coincidir con los del dashboard</p>
+  </div>
+  <div class="uz" onclick="document.getElementById('fi').click()">
+    <span class="icon">📂</span>
+    <p>Clic para subir Excel o CSV</p>
+    <span>.xlsx &nbsp;·&nbsp; .xls &nbsp;·&nbsp; .csv</span>
+    <input type="file" id="fi" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this)">
+  </div>
+  <div id="ustatus" style="margin-top:.5rem"></div>
+  <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #eee">
+    <button onclick="clearMov()" style="font-size:12px;color:#993C1D;border:1px solid #f0c0b0;border-radius:6px;background:#fff;padding:6px 14px;cursor:pointer">🗑 Borrar todos los movimientos</button>
+  </div>
+</div>
+</div>
+
+<script>
+const ACCS=[
+  {id:'ef-es',name:'Efectivo España',cur:'EUR',emoji:'💶'},
+  {id:'san-j',name:'Santander Joosje',cur:'EUR',emoji:'🏦'},
+  {id:'abn',name:'ABN AMRO',cur:'EUR',emoji:'🏦'},
+  {id:'wise',name:'Wise',cur:'EUR',emoji:'🌐'},
+  {id:'san-s',name:'Santander Santi',cur:'EUR',emoji:'🏦'},
+  {id:'ef-ar-usd',name:'Efectivo Argentina USD',cur:'USD',emoji:'💵'},{id:'ef-ar-eur',name:'Efectivo Argentina EUR',cur:'EUR',emoji:'💶'},
+];
+let ST={bal:{},movs:[]};
+try{const s=localStorage.getItem('jdash_v1');if(s)ST=JSON.parse(s);}catch(e){}
+function sv(){try{localStorage.setItem('jdash_v1',JSON.stringify(ST));}catch(e){}}
+function fxA(){return parseFloat(document.getElementById('fx-ars').value)||1300;}
+function fxU(){return parseFloat(document.getElementById('fx-usd').value)||0.92;}
+function toE(v,c){if(c==='EUR')return v;if(c==='ARS')return v/fxA();if(c==='USD')return v*fxU();return v;}
+function fe(v){return '€'+v.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fAmt(v,c){const s=v>=0?'+':'';if(c==='ARS')return s+v.toLocaleString('es-AR',{maximumFractionDigits:0})+' ARS';return s+v.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' '+c;}
+function getBal(id){
+  const b=ST.bal[id]||0;
+  const a=ACCS.find(x=>x.id===id);if(!a)return b;
+  return b+ST.movs.filter(m=>m.acc===a.name).reduce((s,m)=>s+m.amt,0);
+}
+function rSummary(){
+  let tot=0,tin=0,tout=0;
+  ACCS.forEach(a=>{tot+=toE(getBal(a.id),a.cur);});
+  ST.movs.forEach(m=>{const a=ACCS.find(x=>x.name===m.acc);const c=a?a.cur:'EUR';const e=toE(m.amt,c);if(e>0)tin+=e;else tout+=e;});
+  const meses=[...new Set(ST.movs.map(m=>m.date.slice(0,7)))].length;
+  document.getElementById('smets').innerHTML=`
+    <div class="met"><div class="ml">total consolidado</div><div class="mv" style="color:#0F6E56">${fe(tot)}</div><div class="ms">todas las cuentas en EUR</div></div>
+    <div class="met"><div class="ml">movimientos cargados</div><div class="mv">${ST.movs.length}</div><div class="ms">${meses} meses registrados</div></div>
+    <div class="met"><div class="ml">ingresos totales</div><div class="mv" style="color:#0F6E56">${fe(tin)}</div><div class="ms">acumulado</div></div>
+    <div class="met"><div class="ml">egresos totales</div><div class="mv" style="color:#993C1D">${fe(Math.abs(tout))}</div><div class="ms">acumulado</div></div>
+  `;
+}
+function rAccs(){
+  const g=document.getElementById('agrid');g.innerHTML='';
+  ACCS.forEach(a=>{
+    const b=getBal(a.id);const ev=toE(b,a.cur);
+    const d=document.createElement('div');d.className='ac';
+    const convStr=a.cur!=='EUR'?`<div class="aconv">Saldo: ${b.toLocaleString('es-ES',{maximumFractionDigits:0})} ${a.cur}</div>`:'';
+    d.innerHTML=`
+      <div class="at">
+        <div class="ad" style="background:#f5f5f3;font-size:18px">${a.emoji}</div>
+        <div><div class="an">${a.name}</div><div class="as">${a.cur}</div></div>
+      </div>
+      <div class="ab" style="color:${ev>=0?'#0F6E56':'#993C1D'}">${fe(ev)}</div>
+      ${convStr}
+      <div class="ainp">
+        <input type="number" id="i-${a.id}" placeholder="Saldo inicial" step="0.01" value="${ST.bal[a.id]!=null?ST.bal[a.id]:''}">
+        <button onclick="svBal('${a.id}')">Guardar</button>
+      </div>`;
+    g.appendChild(d);
+  });
+}
+function svBal(id){const v=parseFloat(document.getElementById('i-'+id).value);if(isNaN(v))return;ST.bal[id]=v;sv();rAccs();rSummary();}
+function recalc(){rSummary();rAccs();if(!document.getElementById('p-analisis').style.display||document.getElementById('p-analisis').classList.contains('active'))rAnal();}
+function rMov(){
+  const fa=document.getElementById('fa').value;
+  const fc=document.getElementById('fc').value;
+  let ms=[...ST.movs];
+  if(fa)ms=ms.filter(m=>m.acc===fa);
+  if(fc)ms=ms.filter(m=>m.cat===fc);
+  ms.sort((a,b)=>b.date.localeCompare(a.date));
+  const box=document.getElementById('movbox');
+  if(!ms.length){box.innerHTML=`<div class="empty">Sin movimientos.<br>Subí un Excel desde la pestaña "Cargar Excel".</div>`;return;}
+  let h=`<table class="mt"><thead><tr><th>Fecha</th><th>Cuenta</th><th>Categoría</th><th>Descripción</th><th style="text-align:right">Monto</th></tr></thead><tbody>`;
+  ms.forEach(m=>{const a=ACCS.find(x=>x.name===m.acc);const c=a?a.cur:'EUR';
+    h+=`<tr><td style="color:#888">${m.date}</td><td>${m.acc}</td><td><span class="bdg ${m.amt>=0?'bin':'bout'}">${m.cat||'—'}</span></td><td style="color:#888">${m.desc||'—'}</td><td style="text-align:right" class="${m.amt>=0?'pos':'neg'}">${fAmt(m.amt,c)}</td></tr>`;
+  });
+  h+=`</tbody></table>`;box.innerHTML=h;
+}
+function updFilters(){
+  const as=[...new Set(ST.movs.map(m=>m.acc))].sort();
+  const cs=[...new Set(ST.movs.map(m=>m.cat).filter(Boolean))].sort();
+  const sa=document.getElementById('fa'),sc=document.getElementById('fc');
+  const ca=sa.value,cc=sc.value;
+  sa.innerHTML='<option value="">Todas las cuentas</option>'+as.map(a=>`<option value="${a}"${a===ca?' selected':''}>${a}</option>`).join('');
+  sc.innerHTML='<option value="">Todas las categorías</option>'+cs.map(c=>`<option value="${c}"${c===cc?' selected':''}>${c}</option>`).join('');
+}
+let chCat=null,chMes=null;
+function rAnal(){
+  const el=document.getElementById('abox');
+  if(!ST.movs.length){el.innerHTML=`<div class="empty">Cargá movimientos para ver el análisis.</div>`;return;}
+  const catT={};
+  ST.movs.forEach(m=>{const a=ACCS.find(x=>x.name===m.acc);const c=a?a.cur:'EUR';const cat=m.cat||'Sin categoría';if(!catT[cat])catT[cat]={i:0,o:0};const e=toE(m.amt,c);if(e>0)catT[cat].i+=e;else catT[cat].o+=Math.abs(e);});
+  const monT={};
+  ST.movs.forEach(m=>{const a=ACCS.find(x=>x.name===m.acc);const c=a?a.cur:'EUR';const mo=m.date.slice(0,7);if(!monT[mo])monT[mo]={i:0,o:0};const e=toE(m.amt,c);if(e>0)monT[mo].i+=e;else monT[mo].o+=Math.abs(e);});
+  const cats=Object.keys(catT).sort((a,b)=>catT[b].o-catT[a].o);
+  const mons=Object.keys(monT).sort();
+  const ch=Math.max(220,cats.length*38+80);
+  el.innerHTML=`
+    <div class="stitle">egresos e ingresos por categoría</div>
+    <div class="legrow">
+      <span class="legit"><span class="legsq" style="background:#F0997B"></span>Egresos</span>
+      <span class="legit"><span class="legsq" style="background:#5DCAA5"></span>Ingresos</span>
+    </div>
+    <div class="cw" style="height:${ch}px"><canvas id="cc"></canvas></div>
+    <div class="stitle" style="margin-top:1.5rem">evolución mensual</div>
+    <div class="legrow">
+      <span class="legit"><span class="legsq" style="background:#5DCAA5"></span>Ingresos</span>
+      <span class="legit"><span class="legsq" style="background:#F0997B"></span>Egresos</span>
+    </div>
+    <div class="cw" style="height:260px"><canvas id="cm"></canvas></div>
+  `;
+  if(chCat){chCat.destroy();chCat=null;}
+  if(chMes){chMes.destroy();chMes=null;}
+  chCat=new Chart(document.getElementById('cc'),{
+    type:'bar',
+    data:{labels:cats,datasets:[
+      {label:'Egresos',data:cats.map(c=>+catT[c].o.toFixed(2)),backgroundColor:'#F0997B',borderColor:'#993C1D',borderWidth:1},
+      {label:'Ingresos',data:cats.map(c=>+catT[c].i.toFixed(2)),backgroundColor:'#5DCAA5',borderColor:'#0F6E56',borderWidth:1}
+    ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{callback:v=>'€'+Math.round(v)}},y:{ticks:{font:{size:12}}}}}
+  });
+  chMes=new Chart(document.getElementById('cm'),{
+    type:'bar',
+    data:{labels:mons,datasets:[
+      {label:'Ingresos',data:mons.map(m=>+monT[m].i.toFixed(2)),backgroundColor:'#5DCAA5',borderColor:'#0F6E56',borderWidth:1},
+      {label:'Egresos',data:mons.map(m=>+monT[m].o.toFixed(2)),backgroundColor:'#F0997B',borderColor:'#993C1D',borderWidth:1}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:11}}},y:{ticks:{callback:v=>'€'+Math.round(v)}}}}
+  });
+}
+function pDate(v){
+  if(!v)return '';
+  if(typeof v==='number'){const d=new Date(Math.round((v-25569)*86400*1000));return d.toISOString().slice(0,10);}
+  const s=String(v).trim();
+  const p=s.split(/[\/\-\.]/);
+  if(p.length===3){if(p[0].length===4)return `${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`;
+    return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}
+  return s;
+}
+function normAcc(n){
+  if(!n)return '';
+  const s=n.toString().toLowerCase().trim();
+  for(const a of ACCS){
+    if(a.name.toLowerCase()===s)return a.name;
+    const words=a.name.toLowerCase().split(' ');
+    if(words.every(w=>s.includes(w)))return a.name;
+  }
+  return n.toString().trim();
+}
+function handleFile(inp){
+  const file=inp.files[0];if(!file)return;
+  const st=document.getElementById('ustatus');
+  st.innerHTML=`<p class="info">⏳ Procesando ${file.name}...</p>`;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!rows.length){st.innerHTML=`<p class="error">❌ Archivo vacío.</p>`;return;}
+      const fc=(ops)=>{for(const op of ops){const f=Object.keys(rows[0]).find(h=>h.toLowerCase().trim()===op||h.toLowerCase().includes(op));if(f)return f;}return null;};
+      const cD=fc(['fecha','date','día','dia']);
+      const cA=fc(['cuenta','account','cta']);
+      const cC=fc(['categoría','categoria','category','cat']);
+      const cDe=fc(['descripción','descripcion','description','desc','detalle','concepto']);
+      const cM=fc(['monto','amount','importe','valor']);
+      if(!cD||!cA||!cM){st.innerHTML=`<p class="error">❌ Faltan columnas: fecha, cuenta o monto.</p>`;return;}
+      let added=0,skip=0;
+      rows.forEach(row=>{
+        const amt=parseFloat(String(row[cM]).replace(',','.'));
+        if(isNaN(amt)){skip++;return;}
+        ST.movs.push({date:pDate(row[cD]),acc:normAcc(row[cA]),cat:row[cC]?String(row[cC]).trim():'Sin categoría',desc:row[cDe]?String(row[cDe]).trim():'',amt});
+        added++;
+      });
+      sv();updFilters();rMov();rSummary();rAccs();
+      if(document.getElementById('p-analisis').classList.contains('active'))rAnal();
+      st.innerHTML=`<p class="success">✅ ${added} movimientos cargados correctamente${skip?' ('+skip+' filas omitidas)':''}.</p>`;
+    }catch(err){st.innerHTML=`<p class="error">❌ Error: ${err.message}</p>`;}
+  };
+  reader.readAsArrayBuffer(file);inp.value='';
+}
+function clearMov(){if(!confirm('¿Borrar todos los movimientos?'))return;ST.movs=[];sv();updFilters();rMov();rAnal();rSummary();rAccs();}
+function sw(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('p-'+name).classList.add('active');
+  if(name==='analisis')rAnal();
+}
+rSummary();rAccs();updFilters();rMov();
+</script>
+</body>
+</html>
